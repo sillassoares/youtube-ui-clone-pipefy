@@ -1,14 +1,40 @@
-import React from 'react';
+import React, { useRef, useContext } from "react";
+import { useDrag, useDrop } from "react-dnd";
 
-import { MdAdd } from 'react-icons/md';
+import BoardContext from "../Board/context";
 
-import Card from '../Card';
+import { MdAdd } from "react-icons/md";
 
-import { Container } from './styles';
+import Card from "../Card";
+
+import { Container } from "./styles";
 
 export default function List({ data, index: listIndex }) {
+  const ref = useRef();
+  const { move } = useContext(BoardContext);
+
+  const [{ isDragging }, dragRef] = useDrag({
+    item: { type: "LIST", listIndex },
+    collect: monitor => ({
+      isDragging: monitor.isDragging()
+    })
+  });
+
+  const [, dropRef] = useDrop({
+    accept: "CARD",
+    hover(item, monitor) {
+      if (data.cards.length > 0) {
+        return;
+      }
+
+      move(item.listIndex, listIndex, item.index, 0);
+    }
+  });
+
+  dragRef(dropRef(ref));
+
   return (
-    <Container done={data.done}>
+    <Container done={data.done} ref={ref} isDragging={isDragging}>
       <header>
         <h2>{data.title}</h2>
         {data.creatable && (
@@ -19,14 +45,9 @@ export default function List({ data, index: listIndex }) {
       </header>
 
       <ul>
-        { data.cards.map((card, index) => (
-          <Card 
-            key={card.id} 
-            listIndex={listIndex}
-            index={index} 
-            data={card}
-          />
-        )) }
+        {data.cards.map((card, index) => (
+          <Card key={card.id} listIndex={listIndex} index={index} data={card} />
+        ))}
       </ul>
     </Container>
   );
